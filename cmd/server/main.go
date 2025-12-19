@@ -3,10 +3,12 @@ package main
 import (
 	"log"
 
+	"github.com/TimX-21/auth-service-go/internal/auth/handler"
+	"github.com/TimX-21/auth-service-go/internal/auth/repository"
+	"github.com/TimX-21/auth-service-go/internal/auth/route"
+	"github.com/TimX-21/auth-service-go/internal/auth/service"
 	"github.com/TimX-21/auth-service-go/internal/config"
-	"github.com/TimX-21/auth-service-go/internal/middlewares"
 	"github.com/TimX-21/auth-service-go/pkg"
-	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -16,7 +18,7 @@ func main() {
 		log.Fatalf("Failed to initialize logger: %v", err)
 		return
 	}
-	
+
 	defer config.Log.Sync()
 
 	db, err := pkg.ConnectDB()
@@ -25,13 +27,21 @@ func main() {
 		return
 	}
 
-	router := gin.New()
+	config.RunMigrations(db)
 
-	router.Use(gin.Recovery())
-	router.ContextWithFallback = true
-	router.Use(middlewares.LoggerMiddleware())
+	txManager := repository.NewTransactionManager(db)
 
-	router.Run(":8080")
+	authR := repository.NewAuthRepository(db)
+	authS := service.NewAuthService(authR, txManager)
+	authH := handler.NewAuthHandler(authS)
 
-	_ = db.Close()
+	routeConfig := route.NewRouteConfig(
+		authH,
+	)
+
+	router := route.Setup(routeConfig)
+
+	if err := router.Run(":8080"); err != nil {
+		log.Fatalf("Failed to run server: %v", err)
+	}
 }
