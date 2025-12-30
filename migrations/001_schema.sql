@@ -53,3 +53,12 @@ CREATE UNIQUE INDEX idx_password_reset_tokens_hash
 CREATE INDEX idx_password_reset_tokens_expires
     ON password_reset_tokens (expires_at);
 
+CREATE TABLE wallets (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL UNIQUE REFERENCES users(id),
+    balance BIGINT NOT NULL DEFAULT 0,
+    currency VARCHAR(10) NOT NULL DEFAULT 'IDR',
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()  
+);
+
