@@ -296,3 +296,77 @@ func (r *AuthRepository) UpdatePasswordHash(ctx context.Context, user model.User
 
 	return nil
 }
+
+func (r *AuthRepository) RevokeActiveVerificationTokens(ctx context.Context, userId int64) error {
+	conn := r.getExecutor(ctx)
+
+	query := `
+	UPDATE email_verification_tokens
+	SET revoked_at = NOW()
+	WHERE user_id = $1 AND used_at IS NULL AND revoked_at IS NULL
+	`
+
+	if _, err := conn.ExecContext(ctx, query, userId); err != nil {
+		return apperror.ErrDatabase
+	}
+	return nil
+}
+
+func (r *AuthRepository) GetVerificationTokenByHash(ctx context.Context, tokenHash string) (*model.EmailVerificationToken, error) {
+	conn := r.getExecutor(ctx)
+
+	query := `
+	SELECT user_id, expires_at, used_at, revoked_at
+	FROM email_verification_tokens
+	WHERE token_hash = $1
+	`
+
+	var result model.EmailVerificationToken
+	err := conn.QueryRowContext(ctx, query, tokenHash).Scan(
+		&result.UserId,
+		&result.ExpiresAt,
+		&result.UsedAt,
+		&result.RevokedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, apperror.ErrDatabase
+	}
+
+	return &result, nil
+}
+
+func (r *AuthRepository) MarkVerificationTokenUsed(ctx context.Context, tokenHash string) error {
+	conn := r.getExecutor(ctx)
+
+	query := `
+	UPDATE email_verification_tokens
+	SET used_at = NOW()
+	WHERE token_hash = $1 AND used_at IS NULL AND revoked_at IS NULL
+	`
+
+	if _, err := conn.ExecContext(ctx, query, tokenHash); err != nil {
+		return apperror.ErrDatabase
+	}
+
+	return nil
+}
+
+func (r *AuthRepository) VerifyUserEmail(ctx context.Context, userId int64) error {
+	conn := r.getExecutor(ctx)
+
+	query := `
+	UPDATE users
+	SET is_verified = TRUE,
+		email_verified_at = NOW()
+	WHERE id = $1 AND is_verified = FALSE
+	`
+
+	if _, err := conn.ExecContext(ctx, query, userId); err != nil {
+		return apperror.ErrDatabase
+	}
+	return nil
+}

@@ -28,7 +28,7 @@ func main() {
 		return
 	}
 
-	config.RunMigrations(db)
+	// config.RunMigrations(db)
 
 	txManager := repository.NewTransactionManager(db)
 	cfg := config.LoadResetConfig()
@@ -47,4 +47,5 @@ func main() {
 	if err := router.Run(":8080"); err != nil {
 		log.Fatalf("Failed to run server: %v", err)
 	}
+
 }

@@ -1,1 +1,5 @@
 .env
+
+tmp/
+bin/
+build-errors.log

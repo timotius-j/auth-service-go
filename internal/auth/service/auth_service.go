@@ -269,3 +269,5 @@ func (s *AuthService) ResetPasswordService(ctx context.Context, tokenInput model
 		return nil
 	})
 }
+
+// func (s *AuthService) SendVerification(ctx context.Context, )

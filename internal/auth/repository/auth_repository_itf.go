@@ -19,4 +19,8 @@ type AuthRepositoryItf interface {
 	GetValidByHash(ctx context.Context, token model.PasswordResetToken) (*model.PasswordResetToken, error)
 	MarkTokenUsed(ctx context.Context, token model.PasswordResetToken) error
 	UpdatePasswordHash(ctx context.Context, user model.User) error
+	RevokeActiveVerificationTokens(ctx context.Context, userId int64) error
+	GetVerificationTokenByHash(ctx context.Context, tokenHash string) (*model.EmailVerificationToken, error)
+	MarkVerificationTokenUsed(ctx context.Context, tokenHash string) error
+	VerifyUserEmail(ctx context.Context, userId int64) error
 }
